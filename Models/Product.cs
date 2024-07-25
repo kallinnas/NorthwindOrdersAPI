@@ -11,7 +11,7 @@ namespace NorthwindOrdersAPI.Models
         public Supplier? Supplier { get; set; }
         public int? CategoryID { get; set; }
         public Category? Category { get; set; }
-        public int Unit { get; set; }
+        public short Unit { get; set; }
         public decimal Price { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     }

@@ -21,9 +21,17 @@ namespace NorthwindOrdersAPI.Controllers
                 .Select(o => new OrderDTO
                 {
                     OrderID = o.OrderID,
-                    Employee = new EmployeeDTO { EmployeeID = o.EmployeeID, FirstName = o.Employee.FirstName, LastName = o.Employee.LastName },
-                    Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName },
-                    Shipper = new ShipperDTO { ShipperID = o.Shipper.ShipperID, ShipperName = o.Shipper.ShipperName },
+                    EmployeeID = o.EmployeeID,
+                    EmployeeFirstName = o.Employee.FirstName,
+                    EmployeeLastName = o.Employee.LastName,
+                    EmployeeFullName = o.Employee.FirstName + " " + o.Employee.LastName,
+                    CustomerID = o.CustomerID,
+                    CustomerName = o.Customer.CustomerName,
+                    ShipperID = o.ShipperID,
+                    ShipperName = o.Shipper.ShipperName,
+                    //Employee = new EmployeeDTO { EmployeeID = o.EmployeeID, FirstName = o.Employee.FirstName, LastName = o.Employee.LastName },
+                    //Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName },
+                    //Shipper = new ShipperDTO { ShipperID = o.Shipper.ShipperID, ShipperName = o.Shipper.ShipperName },
                     OrderDate = o.OrderDate,
                     OrderTotalPrice = (double)o.OrderDetails.Sum(od => od.Quantity * od.Product.Price)
                 }).ToListAsync();
@@ -45,7 +53,7 @@ namespace NorthwindOrdersAPI.Controllers
                 {
                     OrderID = o.OrderID,
                     Employee = new EmployeeDTO { EmployeeID = o.EmployeeID, FirstName = o.Employee.FirstName, LastName = o.Employee.LastName },
-                    Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName },
+                    Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName, ContactName = o.Customer.ContactName },
                     Shipper = new ShipperDTO { ShipperID = o.Shipper.ShipperID, ShipperName = o.Shipper.ShipperName },
                     OrderDate = o.OrderDate,
                     OrderTotalPrice = (double)o.OrderDetails.Sum(od => od.Quantity * od.Product.Price),
@@ -67,7 +75,6 @@ namespace NorthwindOrdersAPI.Controllers
 
             return Ok(order);
         }
-
 
         [HttpPost("Create")]
         public async Task<ActionResult<OrderDTO>> PostOrder(Order order)
@@ -157,29 +164,34 @@ namespace NorthwindOrdersAPI.Controllers
             }
             catch (DbUpdateException ex)
             {
-                // Consider logging the exception
                 return BadRequest($"An error occurred while updating the order: {ex.InnerException?.Message}");
             }
         }
 
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteOrder(int id)
-        //{
-        //    var order = await _context.Orders.FindAsync(id);
-        //    if (order == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("Delete/{id}")]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync(o => o.OrderID == id);
 
-        //    _context.Orders.Remove(order);
-        //    await _context.SaveChangesAsync();
+            if (order == null)
+            {
+                return NotFound("Order not found.");
+            }
 
-        //    return NoContent();
-        //}
+            _context.OrderDetails.RemoveRange(order.OrderDetails);
+            _context.Orders.Remove(order);
 
-        //private bool OrderExists(int id)
-        //{
-        //    return _context.Orders.Any(e => e.OrderID == id);
-        //}
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(true);
+            }
+            catch (DbUpdateException ex)
+            {
+                return BadRequest($"An error occurred while deleting the order: {ex.InnerException?.Message}");
+            }
+        }
     }
 }

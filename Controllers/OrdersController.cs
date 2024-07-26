@@ -97,14 +97,12 @@ namespace NorthwindOrdersAPI.Controllers
                 return BadRequest("Order and order details are required.");
             }
 
-            // Check if the customer exists
             var customerExists = await _context.Customers.AnyAsync(c => c.CustomerID == order.CustomerID);
             if (!customerExists)
             {
                 return BadRequest("Invalid Customer ID.");
             }
 
-            // Check if the employee exists
             var employeeExists = await _context.Employees.AnyAsync(e => e.EmployeeID == order.EmployeeID);
             if (!employeeExists)
             {
@@ -120,17 +118,14 @@ namespace NorthwindOrdersAPI.Controllers
                 return NotFound("Order not found.");
             }
 
-            // Update existing order
             existingOrder.CustomerID = order.CustomerID;
             existingOrder.EmployeeID = order.EmployeeID;
             existingOrder.OrderDate = order.OrderDate;
             existingOrder.ShipperID = order.ShipperID;
 
-            // Handle OrderDetails updates
             var existingDetails = existingOrder.OrderDetails.ToList();
             var newDetails = order.OrderDetails.ToList();
 
-            // Remove old order details that are not in the new order
             foreach (var detail in existingDetails)
             {
                 if (!newDetails.Any(d => d.OrderDetailID == detail.OrderDetailID))
@@ -139,19 +134,17 @@ namespace NorthwindOrdersAPI.Controllers
                 }
             }
 
-            // Add or update order details
+
             foreach (var detail in newDetails)
             {
                 var existingDetail = existingDetails.FirstOrDefault(d => d.OrderDetailID == detail.OrderDetailID);
                 if (existingDetail == null)
                 {
-                    // New detail
-                    detail.OrderID = id; // Ensure the OrderID is set
+                    detail.OrderID = id;
                     _context.OrderDetails.Add(detail);
                 }
                 else
                 {
-                    // Update existing detail
                     existingDetail.ProductID = detail.ProductID;
                     existingDetail.Quantity = detail.Quantity;
                 }
@@ -169,188 +162,24 @@ namespace NorthwindOrdersAPI.Controllers
             }
         }
 
-        //[HttpPut("Update/{id}")]
-        //public async Task<IActionResult> PutOrder(int id, Order order)
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteOrder(int id)
         //{
-        //    if (order == null || order.OrderDetails == null || order.OrderDetails.Count == 0)
+        //    var order = await _context.Orders.FindAsync(id);
+        //    if (order == null)
         //    {
-        //        return BadRequest("Order and order details are required.");
+        //        return NotFound();
         //    }
 
-        //    // Check if the customer exists
-        //    var customerExists = await _context.Customers.AnyAsync(c => c.CustomerID == order.CustomerID);
-        //    if (!customerExists)
-        //    {
-        //        return BadRequest("Invalid Customer ID.");
-        //    }
+        //    _context.Orders.Remove(order);
+        //    await _context.SaveChangesAsync();
 
-        //    // Check if the employee exists
-        //    var employeeExists = await _context.Employees.AnyAsync(e => e.EmployeeID == order.EmployeeID);
-        //    if (!employeeExists)
-        //    {
-        //        return BadRequest("Invalid Employee ID.");
-        //    }
-
-        //    var existingOrder = await _context.Orders
-        //        .Include(o => o.OrderDetails)
-        //        .FirstOrDefaultAsync(o => o.OrderID == id);
-
-        //    if (existingOrder == null)
-        //    {
-        //        return NotFound("Order not found.");
-        //    }
-
-        //    // Update existing order
-        //    existingOrder.CustomerID = order.CustomerID;
-        //    existingOrder.EmployeeID = order.EmployeeID;
-        //    existingOrder.OrderDate = order.OrderDate;
-        //    existingOrder.ShipperID = order.ShipperID;
-
-        //    // Remove old order details
-        //    _context.OrderDetails.RemoveRange(existingOrder.OrderDetails);
-
-        //    // Add new order details
-        //    foreach (var detail in order.OrderDetails)
-        //    {
-        //        detail.OrderID = id; // Ensure the OrderID is set
-        //        _context.OrderDetails.Add(detail);
-        //    }
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //        return Ok(true);
-        //    }
-        //    catch (DbUpdateException ex)
-        //    {
-        //        // Consider logging the exception
-        //        return BadRequest($"An error occurred while updating the order: {ex.InnerException?.Message}");
-        //    }
+        //    return NoContent();
         //}
 
-
-
-        //[HttpPut("Update/{id}")]
-        //public async Task<IActionResult> PutOrder(int id, Order order)
+        //private bool OrderExists(int id)
         //{
-        //    if (order == null || order.OrderDetails == null || order.OrderDetails.Count == 0)
-        //    {
-        //        return BadRequest("Order and order details are required.");
-        //    }
-
-        //    var customerExists = await _context.Customers.AnyAsync(c => c.CustomerID == order.CustomerID);
-        //    if (!customerExists)
-        //    {
-        //        return BadRequest("Invalid Customer ID.");
-        //    }
-
-        //    var existingOrder = await _context.Orders
-        //        .Include(o => o.OrderDetails)
-        //        .FirstOrDefaultAsync(o => o.OrderID == id);
-
-        //    if (existingOrder == null)
-        //    {
-        //        return NotFound("Order not found.");
-        //    }
-
-        //    existingOrder.CustomerID = order.CustomerID;
-        //    existingOrder.EmployeeID = order.EmployeeID;
-        //    existingOrder.OrderDate = order.OrderDate;
-        //    existingOrder.ShipperID = order.ShipperID;
-
-        //    _context.OrderDetails.RemoveRange(existingOrder.OrderDetails);
-        //    foreach (var detail in order.OrderDetails)
-        //    {
-        //        detail.OrderID = id;
-        //        _context.OrderDetails.Add(detail);
-        //    }
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //        return Ok(true);
-        //    }
-        //    catch (DbUpdateException ex)
-        //    {
-        //        return BadRequest($"An error occurred while updating the order: {ex.InnerException?.Message}");
-        //    }
+        //    return _context.Orders.Any(e => e.OrderID == id);
         //}
-
-        //[HttpPut("Update/{id}")]
-        //public async Task<IActionResult> PutOrder(int id, Order order)
-        //{
-        //    if (order == null || order.OrderDetails == null || order.OrderDetails.Count == 0)
-        //    {
-        //        return BadRequest("Order and order details are required.");
-        //    }
-
-        //    var customerExists = await _context.Customers.AnyAsync(c => c.CustomerID == order.CustomerID);
-        //    if (!customerExists)
-        //    {
-        //        return BadRequest("Invalid Customer ID.");
-        //    }
-
-        //    var productIds = order.OrderDetails.Select(od => od.ProductID).Distinct();
-        //    var validProductIds = await _context.Products
-        //        .Where(p => productIds.Contains(p.ProductID))
-        //        .Select(p => p.ProductID)
-        //        .ToListAsync();
-
-        //    if (validProductIds.Count != productIds.Count())
-        //    {
-        //        return BadRequest("One or more Product IDs are invalid.");
-        //    }
-
-        //    var existingOrder = await _context.Orders
-        //        .Include(o => o.OrderDetails)
-        //        .FirstOrDefaultAsync(o => o.OrderID == id);
-
-        //    if (existingOrder == null)
-        //    {
-        //        return NotFound("Order not found.");
-        //    }
-
-        //    existingOrder.CustomerID = order.CustomerID;
-        //    existingOrder.EmployeeID = order.EmployeeID;
-        //    existingOrder.OrderDate = order.OrderDate;
-        //    existingOrder.ShipperID = order.ShipperID;
-
-        //    _context.OrderDetails.RemoveRange(existingOrder.OrderDetails);
-        //    foreach (var detail in order.OrderDetails)
-        //    {
-        //        detail.OrderID = id;
-        //        _context.OrderDetails.Add(detail);
-        //    }
-
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //        return Ok(true);
-        //    }
-        //    catch (DbUpdateException ex)
-        //    {
-        //        return BadRequest($"An error occurred while updating the order: {ex.InnerException?.Message}");
-        //    }
-        //}
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
-        {
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool OrderExists(int id)
-        {
-            return _context.Orders.Any(e => e.OrderID == id);
-        }
     }
 }

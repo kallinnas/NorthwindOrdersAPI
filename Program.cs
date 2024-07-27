@@ -1,33 +1,32 @@
+using static Microsoft.AspNetCore.Http.StatusCodes;
 using Microsoft.EntityFrameworkCore;
 using NorthwindOrdersAPI.Data;
-using static Microsoft.AspNetCore.Http.StatusCodes;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDBContext>(options =>
-{ options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")); });
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddCors(options =>
-    {
-        options.AddPolicy("AllowAllOrigins",
-            builder => { builder.WithOrigins("http://localhost:4200").AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader(); });
-    });
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder => { builder.WithOrigins("http://localhost:4200").AllowAnyMethod().AllowAnyHeader(); });
+});
 
 builder.Services.AddHttpsRedirection(options =>
 {
     options.RedirectStatusCode = Status307TemporaryRedirect;
-    options.HttpsPort = 5001;
+    options.HttpsPort = 7022; // Ensure this matches your HTTPS port
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -35,12 +34,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseMiddleware<ErrorHandler>();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseCors("AllowAllOrigins");
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
+

@@ -17,18 +17,33 @@ namespace NorthwindOrdersAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetEmployee()
         {
-            var product = await _context.Products
+            try
+            {
+                var product = await _context.Products
                 .Select(p => new Product
                 {
                     ProductID = p.ProductID,
                     ProductName = p.ProductName,
                     SupplierID = p.SupplierID,
-                    CategoryID  = p.CategoryID,
+                    CategoryID = p.CategoryID,
                     Unit = p.Unit,
                     Price = p.Price,
                 }).ToListAsync();
 
-            return Ok(product);
+                return Ok(product);
+            }
+
+            catch (DbUpdateException ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
+            }
         }
 
     }

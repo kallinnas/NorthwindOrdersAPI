@@ -9,13 +9,11 @@ namespace NorthwindOrdersAPI.Data.DTO
         public string? EmployeeLastName { get; set; }
         public string? EmployeeFirstName { get; set; }
         public string? EmployeeFullName { get; set; }
-        public EmployeeDTO? Employee { get; set; }
         public int CustomerID { get; set; }
         public string? CustomerName { get; set; }
-        public CustomerDTO? Customer { get; set; }
+        public string? CustomerContactName { get; set; }
         public int? ShipperID { get; set; }
         public string? ShipperName { get; set; }
-        public ShipperDTO? Shipper { get; set; }
         public DateTime OrderDate { get; set; }
         public double OrderTotalPrice { get; set; }
         public ICollection<OrderDetailDTO> OrderDetails { get; set; } = new List<OrderDetailDTO>();

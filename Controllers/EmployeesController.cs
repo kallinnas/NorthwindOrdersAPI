@@ -16,7 +16,9 @@ namespace NorthwindOrdersAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Employee>>> GetEmployee()
         {
-            var employee = await _context.Employees
+            try
+            {
+                var employee = await _context.Employees
                 .Select(e => new Employee
                 {
                     EmployeeID = e.EmployeeID,
@@ -27,8 +29,21 @@ namespace NorthwindOrdersAPI.Controllers
                     Notes = e.Notes,
                 }).ToListAsync();
 
-            return Ok(employee);
+                return Ok(employee);
+            }
+
+            catch (DbUpdateException ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
+            }
         }
-     
+
     }
 }

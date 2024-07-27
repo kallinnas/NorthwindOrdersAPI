@@ -17,8 +17,9 @@ namespace NorthwindOrdersAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDTO>>> GetOrders()
         {
-            var orderDtos = await _context.Orders
-                .Select(o => new OrderDTO
+            try
+            {
+                var orderDtos = await _context.Orders.Select(o => new OrderDTO
                 {
                     OrderID = o.OrderID,
                     EmployeeID = o.EmployeeID,
@@ -29,20 +30,32 @@ namespace NorthwindOrdersAPI.Controllers
                     CustomerName = o.Customer.CustomerName,
                     ShipperID = o.ShipperID,
                     ShipperName = o.Shipper.ShipperName,
-                    //Employee = new EmployeeDTO { EmployeeID = o.EmployeeID, FirstName = o.Employee.FirstName, LastName = o.Employee.LastName },
-                    //Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName },
-                    //Shipper = new ShipperDTO { ShipperID = o.Shipper.ShipperID, ShipperName = o.Shipper.ShipperName },
                     OrderDate = o.OrderDate,
                     OrderTotalPrice = (double)o.OrderDetails.Sum(od => od.Quantity * od.Product.Price)
                 }).ToListAsync();
 
-            return Ok(orderDtos);
+                return Ok(orderDtos);
+            }
+
+            catch (DbUpdateException ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<OrderDTO>> GetOrder(int id)
         {
-            var order = await _context.Orders
+            try
+            {
+                var order = await _context.Orders
                 .Include(o => o.Customer)
                 .Include(o => o.Employee)
                 .Include(o => o.Shipper)
@@ -52,9 +65,15 @@ namespace NorthwindOrdersAPI.Controllers
                 .Select(o => new OrderDTO
                 {
                     OrderID = o.OrderID,
-                    Employee = new EmployeeDTO { EmployeeID = o.EmployeeID, FirstName = o.Employee.FirstName, LastName = o.Employee.LastName },
-                    Customer = new CustomerDTO { CustomerID = o.Customer.CustomerID, CustomerName = o.Customer.CustomerName, ContactName = o.Customer.ContactName },
-                    Shipper = new ShipperDTO { ShipperID = o.Shipper.ShipperID, ShipperName = o.Shipper.ShipperName },
+                    EmployeeID = o.EmployeeID,
+                    EmployeeFirstName = o.Employee.FirstName,
+                    EmployeeLastName = o.Employee.LastName,
+                    EmployeeFullName = o.Employee.FirstName + " " + o.Employee.LastName,
+                    CustomerID = o.Customer.CustomerID,
+                    CustomerName = o.Customer.CustomerName,
+                    CustomerContactName = o.Customer.ContactName,
+                    ShipperID = o.Shipper.ShipperID,
+                    ShipperName = o.Shipper.ShipperName,
                     OrderDate = o.OrderDate,
                     OrderTotalPrice = (double)o.OrderDetails.Sum(od => od.Quantity * od.Product.Price),
                     OrderDetails = o.OrderDetails.Select(od => new OrderDetailDTO
@@ -68,12 +87,25 @@ namespace NorthwindOrdersAPI.Controllers
                     }).ToList()
                 }).FirstOrDefaultAsync();
 
-            if (order == null)
-            {
-                return NotFound();
+                if (order == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(order);
             }
 
-            return Ok(order);
+            catch (DbUpdateException ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
+            }
         }
 
         [HttpPost("Create")]
@@ -84,113 +116,126 @@ namespace NorthwindOrdersAPI.Controllers
                 return BadRequest("Order and order details are required.");
             }
 
-            _context.Orders.Add(order);
-
-            foreach (var detail in order.OrderDetails)
+            try
             {
-                _context.OrderDetails.Add(detail);
+                _context.Orders.Add(order);
+
+                foreach (var detail in order.OrderDetails)
+                {
+                    _context.OrderDetails.Add(detail);
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(true);
             }
 
-            await _context.SaveChangesAsync();
+            catch (DbUpdateException ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
 
-            return Ok(true);
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
+            }
         }
 
         [HttpPut("Update/{id}")]
         public async Task<IActionResult> PutOrder(int id, Order order)
         {
-            if (order == null || order.OrderDetails == null || order.OrderDetails.Count == 0)
-            {
-                return BadRequest("Order and order details are required.");
-            }
-
-            var customerExists = await _context.Customers.AnyAsync(c => c.CustomerID == order.CustomerID);
-            if (!customerExists)
-            {
-                return BadRequest("Invalid Customer ID.");
-            }
-
-            var employeeExists = await _context.Employees.AnyAsync(e => e.EmployeeID == order.EmployeeID);
-            if (!employeeExists)
-            {
-                return BadRequest("Invalid Employee ID.");
-            }
-
-            var existingOrder = await _context.Orders
-                .Include(o => o.OrderDetails)
-                .FirstOrDefaultAsync(o => o.OrderID == id);
-
-            if (existingOrder == null)
-            {
-                return NotFound("Order not found.");
-            }
-
-            existingOrder.CustomerID = order.CustomerID;
-            existingOrder.EmployeeID = order.EmployeeID;
-            existingOrder.OrderDate = order.OrderDate;
-            existingOrder.ShipperID = order.ShipperID;
-
-            var existingDetails = existingOrder.OrderDetails.ToList();
-            var newDetails = order.OrderDetails.ToList();
-
-            foreach (var detail in existingDetails)
-            {
-                if (!newDetails.Any(d => d.OrderDetailID == detail.OrderDetailID))
-                {
-                    _context.OrderDetails.Remove(detail);
-                }
-            }
-
-
-            foreach (var detail in newDetails)
-            {
-                var existingDetail = existingDetails.FirstOrDefault(d => d.OrderDetailID == detail.OrderDetailID);
-                if (existingDetail == null)
-                {
-                    detail.OrderID = id;
-                    _context.OrderDetails.Add(detail);
-                }
-                else
-                {
-                    existingDetail.ProductID = detail.ProductID;
-                    existingDetail.Quantity = detail.Quantity;
-                }
-            }
-
             try
             {
+                var existingOrder = await _context.Orders
+                    .Include(o => o.OrderDetails)
+                    .FirstOrDefaultAsync(o => o.OrderID == id);
+
+                if (existingOrder == null)
+                {
+                    return NotFound("Order not found.");
+                }
+
+                existingOrder.CustomerID = order.CustomerID;
+                existingOrder.EmployeeID = order.EmployeeID;
+                existingOrder.OrderDate = order.OrderDate;
+                existingOrder.ShipperID = order.ShipperID;
+
+                var existingDetails = existingOrder.OrderDetails.ToList();
+                var newDetails = order.OrderDetails.ToList();
+
+                foreach (var detail in existingDetails)
+                {
+                    if (!newDetails.Any(d => d.OrderDetailID == detail.OrderDetailID))
+                    {
+                        _context.OrderDetails.Remove(detail);
+                    }
+                }
+
+                foreach (var detail in newDetails)
+                {
+                    var existingDetail = existingDetails.FirstOrDefault(d => d.OrderDetailID == detail.OrderDetailID);
+                    if (existingDetail == null)
+                    {
+                        detail.OrderID = id;
+                        _context.OrderDetails.Add(detail);
+                    }
+                    else
+                    {
+                        existingDetail.ProductID = detail.ProductID;
+                        existingDetail.Quantity = detail.Quantity;
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 return Ok(true);
             }
+
             catch (DbUpdateException ex)
             {
-                return BadRequest($"An error occurred while updating the order: {ex.InnerException?.Message}");
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
             }
         }
 
         [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            var order = await _context.Orders
+            try
+            {
+                var order = await _context.Orders
                 .Include(o => o.OrderDetails)
                 .FirstOrDefaultAsync(o => o.OrderID == id);
 
-            if (order == null)
-            {
-                return NotFound("Order not found.");
-            }
+                if (order == null)
+                {
+                    return NotFound("Order not found.");
+                }
 
-            _context.OrderDetails.RemoveRange(order.OrderDetails);
-            _context.Orders.Remove(order);
+                _context.OrderDetails.RemoveRange(order.OrderDetails);
+                _context.Orders.Remove(order);
 
-            try
-            {
                 await _context.SaveChangesAsync();
                 return Ok(true);
             }
+
             catch (DbUpdateException ex)
             {
-                return BadRequest($"An error occurred while deleting the order: {ex.InnerException?.Message}");
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
+            }
+
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
             }
         }
     }

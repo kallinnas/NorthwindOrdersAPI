@@ -23,7 +23,7 @@ namespace NorthwindOrdersAPI.Data
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Shipper)
                 .WithMany(s => s.Orders)
-                .HasForeignKey(o => o.ShipperID); 
+                .HasForeignKey(o => o.ShipperID);
 
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Customer)
@@ -56,8 +56,6 @@ namespace NorthwindOrdersAPI.Data
                 .HasOne(od => od.Product)
                 .WithMany(p => p.OrderDetails)
                 .HasForeignKey(od => od.ProductID);
-   
-            
         }
 
     }

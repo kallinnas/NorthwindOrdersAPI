@@ -46,8 +46,3 @@
 - [The certificate chain was issued by an authority that is not trusted](https://stackoverflow.com/questions/17615260/the-certificate-chain-was-issued-by-an-authority-that-is-not-trusted-when-conn/70850834#70850834)
 - [How to proxy API requests to another server](https://stackoverflow.com/questions/37172928/how-to-proxy-api-requests-to-another-server/71764796#71764796)
 
-
-## Assumptions, Notes, and Design Decisions
-- Used MSSQL in Docker for database management.
-- Stored procedures with ADO.NET for data queries.
-- Proper error handling and logging implemented.  

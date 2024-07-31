@@ -1,6 +1,9 @@
 using static Microsoft.AspNetCore.Http.StatusCodes;
 using Microsoft.EntityFrameworkCore;
 using NorthwindOrdersAPI.Data;
+using NorthwindOrdersAPI.BL;
+using NorthwindOrdersAPI.Services.Interfaces;
+using NorthwindOrdersAPI.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<OrderDetailsRepository>();
 
 builder.Services.AddDbContext<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -21,7 +28,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHttpsRedirection(options =>
 {
     options.RedirectStatusCode = Status307TemporaryRedirect;
-    options.HttpsPort = 7022; // Ensure this matches your HTTPS port
+    options.HttpsPort = 7022;
 });
 
 var app = builder.Build();
@@ -34,7 +41,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseMiddleware<ErrorHandler>();
+app.UseMiddleware<CentralErrorHandler>();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAllOrigins");

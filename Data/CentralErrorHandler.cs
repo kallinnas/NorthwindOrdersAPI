@@ -3,11 +3,11 @@ using System.Text.Json;
 
 namespace NorthwindOrdersAPI.Data
 {
-    public class ErrorHandler
+    public class CentralErrorHandler
     {
         private readonly RequestDelegate _next;
 
-        public ErrorHandler(RequestDelegate next)
+        public CentralErrorHandler(RequestDelegate next)
         {
             _next = next;
         }

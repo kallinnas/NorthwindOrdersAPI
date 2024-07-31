@@ -14,5 +14,16 @@ namespace NorthwindOrdersAPI.Models
         public virtual Customer? Customer { get; set; }
         public virtual Shipper? Shipper { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+        public virtual ICollection<OrderDocument> OrderDocuments { get; set; } = new List<OrderDocument>();
+
+        public Order() { }
+
+        public void UpdateOrderValues(Order order)
+        {
+            CustomerID = order.CustomerID;
+            EmployeeID = order.EmployeeID;
+            OrderDate = order.OrderDate;
+            ShipperID = order.ShipperID;
+        }
     }
 }

@@ -5,38 +5,33 @@ namespace NorthwindOrdersAPI.Repositories
 {
     public class OrderDetailsRepository
     {
-        private readonly AppDBContext _context;
+        private readonly AppDBContext context;
 
-        public OrderDetailsRepository(AppDBContext context) { _context = context; }
+        public OrderDetailsRepository(AppDBContext context) { this.context = context; }
 
         public async Task<int> SaveDBChanges()
         {
-            return await _context.SaveChangesAsync();
+            return await context.SaveChangesAsync();
         }
 
         public void AddDetailToOrder(OrderDetail orderDetail)
         {
-            _context.OrderDetails.Add(orderDetail);
+            context.OrderDetails.Add(orderDetail);
         }
 
         public async Task<bool> AddOrderDetails(List<OrderDetail> orders)
         {
-            _context.OrderDetails.AddRange(orders);
-            await _context.SaveChangesAsync();
+            context.OrderDetails.AddRange(orders);
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> RemoveOrderDetails(List<OrderDetail> orders)
         {
-            _context.OrderDetails.RemoveRange(orders);
-            await _context.SaveChangesAsync();
+            context.OrderDetails.RemoveRange(orders);
+            await context.SaveChangesAsync();
             return true;
         }
-
-        //public async Task<bool> UpdateOrderDetails(int id)
-        //{
-        //    return
-        //}
 
     }
 }

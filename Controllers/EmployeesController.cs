@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NorthwindOrdersAPI.Data;
 using NorthwindOrdersAPI.Models;
+using NorthwindOrdersAPI.Services;
 
 namespace NorthwindOrdersAPI.Controllers
 {
@@ -9,41 +8,16 @@ namespace NorthwindOrdersAPI.Controllers
     [Route("api/[controller]")]
     public class EmployeesController : ControllerBase
     {
-        private readonly AppDBContext _context;
+        private readonly EmployeeService employeeService;
 
-        public EmployeesController(AppDBContext context) { _context = context; }
+        public EmployeesController(EmployeeService employeeService) { this.employeeService = employeeService; }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Employee>>> GetEmployee()
+        public async Task<ActionResult<IEnumerable<Employee>>> GetAllEmployees()
         {
-            try
-            {
-                var employee = await _context.Employees
-                .Select(e => new Employee
-                {
-                    EmployeeID = e.EmployeeID,
-                    FirstName = e.FirstName,
-                    LastName = e.LastName,
-                    BirthDate = e.BirthDate,
-                    Photo = e.Photo,
-                    Notes = e.Notes,
-                }).ToListAsync();
-
-                return Ok(employee);
-            }
-
-            catch (DbUpdateException ex)
-            {
-                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
-                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
-            }
-
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
-            }
+            return Ok(await employeeService.GetAllEmployeesAsync());
         }
 
     }
+
 }

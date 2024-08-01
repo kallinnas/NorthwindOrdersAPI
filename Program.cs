@@ -4,6 +4,7 @@ using NorthwindOrdersAPI.Data;
 using NorthwindOrdersAPI.BL;
 using NorthwindOrdersAPI.Services.Interfaces;
 using NorthwindOrdersAPI.Repositories;
+using NorthwindOrdersAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +14,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<ShipperService>();
+
 builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<CustomerRepository>();
+builder.Services.AddScoped<DocumentRepository>();
+builder.Services.AddScoped<EmployeeRepository>();
+builder.Services.AddScoped<ProductRepository>();
+builder.Services.AddScoped<ShipperRepository>();
 builder.Services.AddScoped<OrderDetailsRepository>();
 
 builder.Services.AddDbContext<AppDBContext>(options =>

@@ -6,18 +6,23 @@ namespace NorthwindOrdersAPI.Repositories
 {
     public class OrderRepository
     {
-        private readonly AppDBContext _context;
+        private readonly AppDBContext context;
 
-        public OrderRepository(AppDBContext context) { _context = context; }
+        public OrderRepository(AppDBContext context) { this.context = context; }
 
         public IQueryable<Order> GetAllOrdersAsync()
         {
-            return _context.Orders
+            return context.Orders
                 .Include(o => o.Employee)
                 .Include(o => o.Customer)
                 .Include(o => o.Shipper)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Product);
+        }
+
+        public async Task<bool> IsOrderExistsAsync(int id)
+        {
+            return await context.Orders.AnyAsync(o => o.OrderID == id);
         }
 
         public async Task<Order?> GetOrderByIdAsync(int id)
@@ -27,8 +32,8 @@ namespace NorthwindOrdersAPI.Repositories
 
         public async Task<bool> CreateOrderAsync(Order order)
         {
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            context.Orders.Add(order);
+            await context.SaveChangesAsync();
             return true;
         }
 
@@ -51,7 +56,7 @@ namespace NorthwindOrdersAPI.Repositories
             {
                 if (!newDetails.Any(d => d.OrderDetailID == detail.OrderDetailID))
                 {
-                    _context.OrderDetails.Remove(detail);
+                    context.OrderDetails.Remove(detail);
                 }
             }
 
@@ -63,7 +68,7 @@ namespace NorthwindOrdersAPI.Repositories
                 if (existingDetail == null)
                 {
                     detail.OrderID = order.OrderID;
-                    _context.OrderDetails.Add(detail);
+                    context.OrderDetails.Add(detail);
                 }
                 // Update old orderDetails
                 else
@@ -74,20 +79,31 @@ namespace NorthwindOrdersAPI.Repositories
             }
 
             // Final save context changes
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UploadOrderDocumentAsync(OrderDocument document)
         {
-            _context.OrderDocuments.Add(document);
-            await _context.SaveChangesAsync();
+            context.OrderDocuments.Add(document);
+            await context.SaveChangesAsync();
             return true;
         }
 
         public async Task<Order?> GetOrderAndOrderDetailsAsync(int id)
         {
-            return await _context.Orders.Include(o => o.OrderDetails).FirstOrDefaultAsync(o => o.OrderID == id);
+            return await context.Orders.Include(o => o.OrderDetails).FirstOrDefaultAsync(o => o.OrderID == id);
+        }
+
+        public void RemoveOrder(Order order)
+        {
+            context.OrderDetails.RemoveRange(order.OrderDetails);
+            context.Orders.Remove(order);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await context.SaveChangesAsync();
         }
     }
 }

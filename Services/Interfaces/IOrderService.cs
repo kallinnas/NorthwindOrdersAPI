@@ -9,5 +9,7 @@ namespace NorthwindOrdersAPI.Services.Interfaces
         Task<bool> UpdateOrderAndDetailsAsync(Order order);
         Task<IEnumerable<OrderDTO>> GetOrdersWithDetailsAsync();
         Task<OrderDTO> GetOrderAsync(int id);
+        Task<bool> IsOrderExistsAsync(int id);
+        Task<bool> DeleteOrderAsync(int id);
     }
 }

@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NorthwindOrdersAPI.Data;
 using NorthwindOrdersAPI.Data.DTO;
 using NorthwindOrdersAPI.Models;
 using NorthwindOrdersAPI.Services.Interfaces;
@@ -11,20 +9,23 @@ namespace NorthwindOrdersAPI.Controllers
     [Route("api/[controller]")]
     public class OrdersController : ControllerBase
     {
-        private readonly AppDBContext _context;
         private readonly IOrderService orderService;
 
-        public OrdersController(IOrderService orderService, AppDBContext context)
+        public OrdersController(IOrderService orderService)
         {
             this.orderService = orderService;
-            _context = context;
+        }
+
+        [HttpGet("Exists/{id}")]
+        public async Task<ActionResult<bool>> IsOrderExists(int id)
+        {
+            return Ok(await orderService.IsOrderExistsAsync(id));
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OrderDTO>>> GetOrdersWithDetails()
         {
-            var orderDtos = await orderService.GetOrdersWithDetailsAsync();
-            return Ok(orderDtos);
+            return Ok(await orderService.GetOrdersWithDetailsAsync());
         }
 
         [HttpGet("{id}")]
@@ -55,35 +56,14 @@ namespace NorthwindOrdersAPI.Controllers
         [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
         {
-            try
+            var result = await orderService.DeleteOrderAsync(id);
+
+            if (!result)
             {
-                var order = await _context.Orders
-                .Include(o => o.OrderDetails)
-                .FirstOrDefaultAsync(o => o.OrderID == id);
-
-                if (order == null)
-                {
-                    return NotFound("Order not found.");
-                }
-
-                _context.OrderDetails.RemoveRange(order.OrderDetails);
-                _context.Orders.Remove(order);
-
-                await _context.SaveChangesAsync();
-                return Ok(true);
+                return NotFound("Order not found.");
             }
 
-            catch (DbUpdateException ex)
-            {
-                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
-                return BadRequest($"An error occurred while retrieving orders: {ex.InnerException?.Message}");
-            }
-
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"{DateTime.UtcNow}: {ex.Message} {ex.StackTrace}");
-                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred while retrieving orders: {ex.Message}");
-            }
+            return Ok(true);
         }
     }
 }

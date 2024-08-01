@@ -82,6 +82,26 @@ namespace NorthwindOrdersAPI.BL
             return MapOrdersToOrderDTO(orders);
         }
 
+        public async Task<bool> IsOrderExistsAsync(int id)
+        {
+            //return await orderRepository.GetOrderByIdAsync(id) != null;
+            return await orderRepository.IsOrderExistsAsync(id);
+        }
+
+        public async Task<bool> DeleteOrderAsync(int id)
+        {
+            var order = await orderRepository.GetOrderByIdAsync(id);
+
+            if (order == null)
+            {
+                return false;
+            }
+
+            orderRepository.RemoveOrder(order);
+            await orderRepository.SaveChangesAsync();
+            return true;
+        }
+
         private IEnumerable<OrderDTO> MapOrdersToOrderDTO(IEnumerable<Order> orders)
         {
             return orders.Select(o => new OrderDTO

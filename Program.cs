@@ -21,6 +21,7 @@ builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<ShipperService>();
 
 builder.Services.AddScoped<OrderRepository>();
+builder.Services.AddScoped<TempOrderRepository>();
 builder.Services.AddScoped<CustomerRepository>();
 builder.Services.AddScoped<DocumentRepository>();
 builder.Services.AddScoped<EmployeeRepository>();
